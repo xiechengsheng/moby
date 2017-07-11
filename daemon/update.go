@@ -4,7 +4,7 @@ import (
 	"github.com/docker/docker/engine"
 )
 
-//更新实体函数
+//更新容器信息
 func (daemon *Daemon) ContainerUpdate(job *engine.Job) engine.Status {
 	if len(job.Args) != 1 {
 		return job.Errorf("Usage: %s CONTAINER", job.Name)

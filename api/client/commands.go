@@ -2934,8 +2934,15 @@ func (cli *DockerCli) CmdOda(args ...string) error {
 	//获取并解析这些变量
 	utils.ParseFlags(cmd, args, true)
 
+	//使用方式：
+	// 1. docker ODA -ob=false -obv=2000
+	// 2. docker ODA -ts=false -tsv=2000
+	// 3. docker ODA -st		--静态将容器绑定到指定的cpu上面，正在建设中（Under Construction），没有实现
+	// 4. docker ODA -rt
+
 	//FLAG FOR OBSERVE ONLY
-	//设置仅观察的值，默认情况下每20秒观测一次
+	//设置仅观察的值，默认情况下每2秒观测一次
+	//确定controlStep的值
 	if *flObserveOnly || cmd.IsSet("obv") || cmd.IsSet("-observe_value") {
 		//check if other control policy is active
 		//检测这些设置值之间的冲突
@@ -2952,6 +2959,7 @@ func (cli *DockerCli) CmdOda(args ...string) error {
 
 	//FLAG FOR TIME SLOTS
 	//时间间隔设置
+	//确定controlStep和timeSlotsControl
 	if *flTimeSlots || cmd.IsSet("tsv") || cmd.IsSet("-time_slots_value") {
 		//check if other control policy is active
 		if *flObserveOnly || cmd.IsSet("-static") || cmd.IsSet("st") || cmd.IsSet("obv") || cmd.IsSet("-observe_value") || *flReactionTime {
@@ -2968,7 +2976,8 @@ func (cli *DockerCli) CmdOda(args ...string) error {
 	}
 
 	//FLAG FOR STATIC ASSIGNMENT PER CONTAINER
-	//每个容器的静态分配 配置
+	//每个容器的静态CPU分配 配置
+	//确定StaticAssignment
 	if cmd.IsSet("-static") || cmd.IsSet("st") {
 		//check if other control policy is active
 		if *flTimeSlots || cmd.IsSet("tsv") || cmd.IsSet("-time_slots_value") || cmd.IsSet("obv") || cmd.IsSet("-observe_value") || *flReactionTime {
@@ -2980,6 +2989,7 @@ func (cli *DockerCli) CmdOda(args ...string) error {
 
 	//FLAG FOR REACTION TIME
 	//默认的观测时间是10ms
+	//确定controlStep和ReactionTime
 	if *flReactionTime || cmd.IsSet("-reaction_time") || cmd.IsSet("rt") {
 		//check if other control policy is active
 		if *flTimeSlots || *flObserveOnly || cmd.IsSet("-static") || cmd.IsSet("st") || cmd.IsSet("tsv") || cmd.IsSet("-time_slots_value") || cmd.IsSet("obv") || cmd.IsSet("-observe_value") {
@@ -3044,6 +3054,7 @@ func (cli *DockerCli) CmdOda(args ...string) error {
 		if Ferr != nil {
 			fmt.Fprintln(cli.out, "ERROR! Couldn't create the file")
 		}
+		//离开if的时候关闭ReactTimeResults.txt文件，无法关闭就报错
 		defer func() {
 			if err := fo.Close(); err != nil {
 				fmt.Fprintln(cli.out, "ERROR! While closing the file")
@@ -3187,6 +3198,7 @@ func (cli *DockerCli) CmdOda(args ...string) error {
 			w.Flush()
 		}
 		//DECIDE AND ACT
+		//假如控制的时间到来
 		if clock_mult == 50 {
 			clock_mult = 0
 			if timeSlotsControl {
